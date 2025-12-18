@@ -1,0 +1,282 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Triforce</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    body { font-family: system-ui, Arial; margin: 20px; }
+    .row { display:flex; gap:12px; flex-wrap:wrap; align-items:flex-end; }
+    input, select, button, textarea { padding:8px; font-size:14px; }
+    table { border-collapse: collapse; width: 100%; margin-top: 12px; }
+    th, td { border: 1px solid #ddd; padding: 8px; }
+    th { background: #f6f6f6; text-align:left; }
+    .card { border:1px solid #ddd; padding:12px; border-radius:8px; margin: 12px 0; }
+    .mut { font-variant-numeric: tabular-nums; }
+    .small { color:#666; font-size:12px; }
+  </style>
+</head>
+<body>
+  <h1>Triforce</h1>
+  <div class="small">PC-only Web-App (Supabase + Cloudflare Pages)</div>
+
+  <div id="auth" class="card">
+    <h2>Login</h2>
+    <div class="row">
+      <div>
+        <div>Email</div>
+        <input id="email" type="email" placeholder="name@mail.de"/>
+      </div>
+      <div>
+        <div>Passwort</div>
+        <input id="pw" type="password" placeholder="••••••••"/>
+      </div>
+      <button id="btnLogin">Login</button>
+      <button id="btnSignup">Registrieren</button>
+      <button id="btnLogout" style="display:none;">Logout</button>
+    </div>
+    <div id="me" class="small" style="margin-top:8px;"></div>
+  </div>
+
+  <div id="app" style="display:none;">
+    <div class="card">
+      <h2>Neuen Dino anlegen (manuell)</h2>
+      <div class="row">
+        <div>
+          <div>Spezies</div>
+          <select id="species"></select>
+        </div>
+        <div>
+          <div>Name</div>
+          <input id="dname" placeholder="z.B. Rex HP-01"/>
+        </div>
+        <div>
+          <div>Sex</div>
+          <select id="sex">
+            <option value="unknown">unknown</option>
+            <option value="male">male</option>
+            <option value="female">female</option>
+          </select>
+        </div>
+        <div>
+          <div>Status</div>
+          <select id="status">
+            <option value="unknown">unknown</option>
+            <option value="breeder">breeder</option>
+            <option value="reserve">reserve</option>
+            <option value="retired">retired</option>
+            <option value="baby">baby</option>
+            <option value="egg">egg</option>
+          </select>
+        </div>
+        <div class="mut">
+          <div>Mut M</div>
+          <input id="mutm" type="number" value="0" min="0"/>
+        </div>
+        <div class="mut">
+          <div>Mut P</div>
+          <input id="mutp" type="number" value="0" min="0"/>
+        </div>
+        <button id="btnCreate">Speichern</button>
+      </div>
+
+      <div style="margin-top:10px;">
+        <details>
+          <summary><b>Stats & Farben (optional)</b></summary>
+          <div class="row" style="margin-top:10px;">
+            <input id="hp" placeholder="Health"/>
+            <input id="stam" placeholder="Stamina"/>
+            <input id="oxy" placeholder="Oxygen"/>
+            <input id="food" placeholder="Food"/>
+            <input id="weight" placeholder="Weight"/>
+            <input id="melee" placeholder="Melee"/>
+            <input id="speed" placeholder="Speed"/>
+          </div>
+          <div class="row" style="margin-top:10px;">
+            <input id="c0" placeholder="Region0 (id oder name)"/>
+            <input id="c1" placeholder="Region1"/>
+            <input id="c2" placeholder="Region2"/>
+            <input id="c3" placeholder="Region3"/>
+            <input id="c4" placeholder="Region4"/>
+            <input id="c5" placeholder="Region5"/>
+          </div>
+        </details>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Library</h2>
+      <div class="row">
+        <input id="q" placeholder="Suche Name/Tag..." />
+        <button id="btnReload">Neu laden</button>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Name</th><th>Spezies</th><th>Sex</th><th>Status</th>
+            <th>Mut (M/P/T)</th><th>Stats (HP / Melee / Wt)</th><th>Farben (R0..R5)</th>
+          </tr>
+        </thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+  </div>
+
+<script>
+  // 1) SET THESE:
+  const SUPABASE_URL = "https://anxsdcmjknxgmdytrplf.supabase.co";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFueHNkY21qa254Z21keXRycGxmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYwNTM3ODgsImV4cCI6MjA4MTYyOTc4OH0.a8Es6bJaXfHDjXz2uwflDt7FMnQhWQN7X-LZe4voPIg";
+
+  const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  const el = (id) => document.getElementById(id);
+
+  async function refreshMe() {
+    const { data: { user } } = await sb.auth.getUser();
+    el("btnLogout").style.display = user ? "inline-block" : "none";
+    el("app").style.display = user ? "block" : "none";
+    el("me").textContent = user ? `Eingeloggt als: ${user.email}` : "Nicht eingeloggt.";
+    if (user) {
+      await loadSpecies();
+      await loadLibrary();
+    }
+  }
+
+  async function loadSpecies() {
+    const { data, error } = await sb.from("species").select("*").order("name");
+    if (error) { alert(error.message); return; }
+    el("species").innerHTML = data.map(s => `<option value="${s.id}">${s.name}</option>`).join("");
+  }
+
+  function parseNumber(v) {
+    if (v === "" || v === null || v === undefined) return null;
+    const n = Number(v);
+    return Number.isFinite(n) ? n : null;
+  }
+
+  async function createDino() {
+    const { data: { user } } = await sb.auth.getUser();
+    if (!user) return alert("Bitte einloggen.");
+
+    const payload = {
+      species_id: el("species").value,
+      name: el("dname").value.trim(),
+      sex: el("sex").value,
+      breeding_status: el("status").value,
+      mut_maternal: parseInt(el("mutm").value || "0", 10),
+      mut_paternal: parseInt(el("mutp").value || "0", 10),
+      owner_id: user.id
+    };
+    if (!payload.name) return alert("Name fehlt.");
+
+    const ins = await sb.from("creatures").insert(payload).select("id").single();
+    if (ins.error) return alert(ins.error.message);
+
+    const cid = ins.data.id;
+
+    // stats optional
+    const stats = {
+      creature_id: cid,
+      health: parseNumber(el("hp").value),
+      stamina: parseNumber(el("stam").value),
+      oxygen: parseNumber(el("oxy").value),
+      food: parseNumber(el("food").value),
+      weight: parseNumber(el("weight").value),
+      melee: parseNumber(el("melee").value),
+      speed: parseNumber(el("speed").value)
+    };
+    await sb.from("creature_stats").upsert(stats);
+
+    // colors optional (store as name for now)
+    const colors = {
+      creature_id: cid,
+      region0_name: el("c0").value || null,
+      region1_name: el("c1").value || null,
+      region2_name: el("c2").value || null,
+      region3_name: el("c3").value || null,
+      region4_name: el("c4").value || null,
+      region5_name: el("c5").value || null
+    };
+    await sb.from("creature_colors").upsert(colors);
+
+    el("dname").value = "";
+    await loadLibrary();
+    alert("Gespeichert.");
+  }
+
+  async function loadLibrary() {
+    const q = el("q").value.trim().toLowerCase();
+
+    // join-ish: fetch creatures + species + stats + colors
+    const { data: creatures, error } = await sb
+      .from("creatures")
+      .select(`id,name,sex,breeding_status,mut_maternal,mut_paternal,tags,
+              species:species_id(name),
+              stats:creature_stats(health,melee,weight),
+              colors:creature_colors(region0_name,region1_name,region2_name,region3_name,region4_name,region5_name)`)
+      .order("created_at", { ascending: false })
+      .limit(200);
+
+    if (error) { alert(error.message); return; }
+
+    const filtered = !q ? creatures : creatures.filter(c => {
+      const tags = (c.tags || []).join(" ").toLowerCase();
+      return (c.name || "").toLowerCase().includes(q) || tags.includes(q);
+    });
+
+    el("rows").innerHTML = filtered.map(c => {
+      const m = c.mut_maternal ?? 0;
+      const p = c.mut_paternal ?? 0;
+      const t = m + p;
+
+      const st = c.stats || {};
+      const hp = st.health ?? "-";
+      const ml = st.melee ?? "-";
+      const wt = st.weight ?? "-";
+
+      const col = c.colors || {};
+      const cols = [col.region0_name,col.region1_name,col.region2_name,col.region3_name,col.region4_name,col.region5_name]
+        .map(x => x || "-").join(" / ");
+
+      return `<tr>
+        <td>${c.name}</td>
+        <td>${c.species?.name || "-"}</td>
+        <td>${c.sex}</td>
+        <td>${c.breeding_status}</td>
+        <td class="mut">${m} / ${p} / ${t}</td>
+        <td>${hp} / ${ml} / ${wt}</td>
+        <td>${cols}</td>
+      </tr>`;
+    }).join("");
+  }
+
+  el("btnLogin").onclick = async () => {
+    const email = el("email").value.trim();
+    const password = el("pw").value;
+    const res = await sb.auth.signInWithPassword({ email, password });
+    if (res.error) alert(res.error.message);
+    await refreshMe();
+  };
+
+  el("btnSignup").onclick = async () => {
+    const email = el("email").value.trim();
+    const password = el("pw").value;
+    const res = await sb.auth.signUp({ email, password });
+    if (res.error) alert(res.error.message);
+    else alert("Registriert. Wenn Email-Bestätigung aktiv ist: bitte Mail bestätigen, dann einloggen.");
+    await refreshMe();
+  };
+
+  el("btnLogout").onclick = async () => {
+    await sb.auth.signOut();
+    await refreshMe();
+  };
+
+  el("btnCreate").onclick = createDino;
+  el("btnReload").onclick = loadLibrary;
+  sb.auth.onAuthStateChange(() => refreshMe());
+  refreshMe();
+</script>
+</body>
+</html>
