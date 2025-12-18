@@ -5,21 +5,60 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>Triforce</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
   <style>
-    body { font-family: system-ui, Arial; margin: 20px; }
+    :root{
+      --bg:#ffffff; --fg:#111827; --muted:#6b7280; --card:#ffffff; --border:#e5e7eb;
+      --th:#f3f4f6; --btn:#111827; --btnfg:#ffffff; --input:#ffffff;
+      --shadow: 0 1px 2px rgba(0,0,0,.06);
+      --link:#2563eb;
+    }
+    body.dark{
+      --bg:#0b1220; --fg:#e5e7eb; --muted:#9ca3af; --card:#0f172a; --border:#24324a;
+      --th:#111c33; --btn:#e5e7eb; --btnfg:#111827; --input:#0b1220;
+      --shadow: 0 1px 2px rgba(0,0,0,.35);
+      --link:#60a5fa;
+    }
+
+    body { font-family: system-ui, Arial; margin: 20px; background:var(--bg); color:var(--fg); }
+    h1 { margin: 0 0 6px 0; }
+    a { color: var(--link); }
     .row { display:flex; gap:12px; flex-wrap:wrap; align-items:flex-end; }
-    input, select, button, textarea { padding:8px; font-size:14px; }
+    input, select, button, textarea {
+      padding:8px; font-size:14px; border:1px solid var(--border); border-radius:8px;
+      background:var(--input); color:var(--fg);
+    }
+    button{
+      border:1px solid var(--border);
+      background:var(--btn); color:var(--btnfg);
+      cursor:pointer;
+      box-shadow: var(--shadow);
+    }
+    button.secondary{
+      background: transparent; color: var(--fg);
+    }
     table { border-collapse: collapse; width: 100%; margin-top: 12px; }
-    th, td { border: 1px solid #ddd; padding: 8px; }
-    th { background: #f6f6f6; text-align:left; }
-    .card { border:1px solid #ddd; padding:12px; border-radius:8px; margin: 12px 0; }
+    th, td { border: 1px solid var(--border); padding: 8px; vertical-align: top; }
+    th { background: var(--th); text-align:left; }
+    .card { border:1px solid var(--border); padding:12px; border-radius:12px; margin: 12px 0; background:var(--card); box-shadow: var(--shadow); }
     .mut { font-variant-numeric: tabular-nums; }
-    .small { color:#666; font-size:12px; }
+    .small { color:var(--muted); font-size:12px; }
+    .topbar { display:flex; justify-content:space-between; align-items:flex-end; gap:12px; flex-wrap:wrap; }
+    pre { margin:0; }
+    details summary { cursor:pointer; }
   </style>
 </head>
+
 <body>
-  <h1>Triforce</h1>
-  <div class="small">PC-only Web-App (Supabase + Cloudflare Pages)</div>
+  <div class="topbar">
+    <div>
+      <h1>Triforce</h1>
+      <div class="small">PC-only Web-App (Supabase + Cloudflare Pages) • ASA (.ini) Import</div>
+    </div>
+    <div class="row" style="align-items:center;">
+      <button id="btnTheme" class="secondary" title="Dark Mode umschalten">🌙 Dark Mode</button>
+    </div>
+  </div>
 
   <div id="auth" class="card">
     <h2>Login</h2>
@@ -33,27 +72,33 @@
         <input id="pw" type="password" placeholder="••••••••"/>
       </div>
       <button id="btnLogin">Login</button>
-      <button id="btnSignup">Registrieren</button>
-      <button id="btnLogout" style="display:none;">Logout</button>
+      <button id="btnSignup" class="secondary">Registrieren</button>
+      <button id="btnLogout" style="display:none;" class="secondary">Logout</button>
     </div>
     <div id="me" class="small" style="margin-top:8px;"></div>
   </div>
 
   <div id="app" style="display:none;">
-    <div class="card">
-  <h2>ASA Import (.ini)</h2>
-  <div class="small">
-    Datei aus: ...\ARK Survival Ascended\ShooterGame\Saved\DinoExports
-  </div>
-  <div class="row" style="margin-top:10px;">
-    <input id="iniFile" type="file" accept=".ini" />
-    <button id="btnImportIni">INI einlesen → Formular füllen</button>
-  </div>
-  <div id="importInfo" class="small" style="margin-top:8px;"></div>
-</div>
 
     <div class="card">
-      <h2>Neuen Dino anlegen (manuell)</h2>
+      <h2>ASA Import (.ini)</h2>
+      <div class="small">
+        Datei aus: <code>...\ARK Survival Ascended\ShooterGame\Saved\DinoExports</code>
+      </div>
+      <div class="row" style="margin-top:10px;">
+        <input id="iniFile" type="file" accept=".ini" />
+        <button id="btnImportIni">INI einlesen → Formular füllen</button>
+      </div>
+      <div id="importInfo" class="small" style="margin-top:8px;"></div>
+
+      <details style="margin-top:10px;">
+        <summary><b>Import-Details (Debug)</b> <span class="small">(hilft, wenn Farben/Level fehlen)</span></summary>
+        <pre id="importDebug" style="white-space:pre-wrap; background:rgba(127,127,127,.08); padding:10px; border-radius:10px; border:1px solid var(--border); margin-top:10px;"></pre>
+      </details>
+    </div>
+
+    <div class="card">
+      <h2>Neuen Dino anlegen</h2>
       <div class="row">
         <div>
           <div>Spezies</div>
@@ -71,6 +116,12 @@
             <option value="female">female</option>
           </select>
         </div>
+
+        <div>
+          <div>Level</div>
+          <input id="lvl" type="number" min="1" placeholder="z.B. 141"/>
+        </div>
+
         <div>
           <div>Status</div>
           <select id="status">
@@ -121,12 +172,12 @@
       <h2>Library</h2>
       <div class="row">
         <input id="q" placeholder="Suche Name/Tag..." />
-        <button id="btnReload">Neu laden</button>
+        <button id="btnReload" class="secondary">Neu laden</button>
       </div>
       <table>
         <thead>
           <tr>
-            <th>Name</th><th>Spezies</th><th>Sex</th><th>Status</th>
+            <th>Name</th><th>Spezies</th><th>Sex</th><th>Level</th><th>Status</th>
             <th>Mut (M/P/T)</th><th>Stats (HP / Melee / Wt)</th><th>Farben (R0..R5)</th>
           </tr>
         </thead>
@@ -136,14 +187,28 @@
   </div>
 
 <script>
-  // 1) SET THESE:
-  const SUPABASE_URL = "https://anxsdcmjknxgmdytrplf.supabase.co";
-  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFueHNkY21qa254Z21keXRycGxmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYwNTM3ODgsImV4cCI6MjA4MTYyOTc4OH0.a8Es6bJaXfHDjXz2uwflDt7FMnQhWQN7X-LZe4voPIg";
+  // =========================
+  // 1) SET THESE TWO VALUES:
+  // =========================
+  const SUPABASE_URL = "PASTE_YOUR_SUPABASE_URL_HERE";
+  const SUPABASE_ANON_KEY = "PASTE_YOUR_SUPABASE_ANON_KEY_HERE";
 
   const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
   const el = (id) => document.getElementById(id);
 
+  // ---------- Dark Mode ----------
+  function setTheme(isDark) {
+    document.body.classList.toggle("dark", !!isDark);
+    localStorage.setItem("triforce_theme", isDark ? "dark" : "light");
+    el("btnTheme").textContent = isDark ? "☀️ Light Mode" : "🌙 Dark Mode";
+  }
+  (function initTheme(){
+    const saved = localStorage.getItem("triforce_theme");
+    setTheme(saved === "dark");
+  })();
+  el("btnTheme").onclick = () => setTheme(!document.body.classList.contains("dark"));
+
+  // ---------- Auth / UI ----------
   async function refreshMe() {
     const { data: { user } } = await sb.auth.getUser();
     el("btnLogout").style.display = user ? "inline-block" : "none";
@@ -161,20 +226,24 @@
     el("species").innerHTML = data.map(s => `<option value="${s.id}">${s.name}</option>`).join("");
   }
 
-  // -------- ASA .ini Import helpers --------
+  function parseNumber(v) {
+    if (v === "" || v === null || v === undefined) return null;
+    const n = Number(String(v).replace(",", "."));
+    return Number.isFinite(n) ? n : null;
+  }
 
+  // -------- ASA .ini Import helpers --------
   function parseIni(text) {
     const sections = {};
     let current = "_";
     sections[current] = {};
-
     const lines = text.split(/\r?\n/);
+
     for (let raw of lines) {
       let line = raw.trim();
       if (!line) continue;
       if (line.startsWith(";") || line.startsWith("#")) continue;
 
-      // section
       const sec = line.match(/^\[(.+?)\]$/);
       if (sec) {
         current = sec[1].trim();
@@ -182,7 +251,6 @@
         continue;
       }
 
-      // key=value
       const eq = line.indexOf("=");
       if (eq > 0) {
         const key = line.slice(0, eq).trim();
@@ -197,18 +265,7 @@
     if (v == null) return null;
     const s = String(v).trim();
     if (!s) return null;
-    // remove quotes if present
     return s.replace(/^"(.*)"$/, "$1").trim();
-  }
-
-  function toSex(v) {
-    const s = (cleanStr(v) || "").toLowerCase();
-    if (["male","männlich","maennlich","m"].includes(s)) return "male";
-    if (["female","weiblich","w"].includes(s)) return "female";
-    // ASA exports sometimes use 0/1
-    if (s === "0") return "male";
-    if (s === "1") return "female";
-    return "unknown";
   }
 
   function toInt(v) {
@@ -221,15 +278,24 @@
 
   function toFloat(v) {
     if (v == null) return null;
-    const s = String(v).replace(",", "."); // allow comma decimals
+    const s = String(v).replace(",", ".");
     const m = s.match(/-?\d+(\.\d+)?/);
     if (!m) return null;
     const n = parseFloat(m[0]);
     return Number.isFinite(n) ? n : null;
   }
 
+  function toSex(v) {
+    const s = (cleanStr(v) || "").toLowerCase();
+    if (["male","männlich","maennlich","m"].includes(s)) return "male";
+    if (["female","weiblich","w"].includes(s)) return "female";
+    // some exports use booleans/0/1
+    if (s === "0" || s === "false") return "male";
+    if (s === "1" || s === "true") return "female";
+    return "unknown";
+  }
+
   function getAny(sections, keys) {
-    // search across all sections for first matching key
     for (const key of keys) {
       for (const secName of Object.keys(sections)) {
         const sec = sections[secName];
@@ -242,12 +308,41 @@
     return null;
   }
 
-  async function findSpeciesIdByName(name) {
+  function guessSpeciesFromValue(raw) {
+    let v = cleanStr(raw);
+    if (!v) return null;
+
+    // if blueprint-like, take last part and remove suffix
+    if (v.includes("/")) v = v.split("/").pop();
+    // common ASA/ARK class pattern
+    v = v.replace(/_Character_BP.*$/i, "");
+    v = v.replace(/_BP.*$/i, "");
+    v = v.replace(/_C$/i, "");
+    v = v.replace(/BlueprintGeneratedClass/i, "").trim();
+
+    // strip quotes again & weird punctuation
+    v = v.replace(/[^a-zA-Z0-9 _-]/g, " ").trim();
+    // collapse spaces
+    v = v.replace(/\s+/g, " ");
+
+    // if still huge, take first token
+    if (v.length > 40) v = v.split(" ")[0];
+
+    return v || null;
+  }
+
+  async function findSpeciesIdByBestMatch(name) {
     if (!name) return null;
+    const want = name.trim().toLowerCase();
     const { data, error } = await sb.from("species").select("id,name");
     if (error) return null;
-    const want = name.trim().toLowerCase();
-    const hit = data.find(s => (s.name || "").trim().toLowerCase() === want);
+
+    // exact
+    let hit = data.find(s => (s.name || "").trim().toLowerCase() === want);
+    if (hit) return hit.id;
+
+    // contains (either direction)
+    hit = data.find(s => (s.name || "").toLowerCase().includes(want) || want.includes((s.name||"").toLowerCase()));
     return hit ? hit.id : null;
   }
 
@@ -255,68 +350,73 @@
     const text = await file.text();
     const ini = parseIni(text);
 
-    // best-guess field mapping (works with many INI variants)
+    // Debug output (sections + keys)
+    const secNames = Object.keys(ini);
+    let debug = "";
+    for (const s of secNames) {
+      const keys = Object.keys(ini[s] || {});
+      debug += `[${s}] (${keys.length} keys)\n` + keys.slice(0, 220).join(", ") + "\n\n";
+    }
+    el("importDebug").textContent = debug.slice(0, 25000);
+
+    // Name
     const dinoName =
-      getAny(ini, ["DinoName","Name","CreatureName","TamedName","Dino Name"]) || file.name.replace(/\.ini$/i,"");
+      getAny(ini, ["DinoName","Name","CreatureName","TamedName","Dino Name","TamedNameString"]) ||
+      file.name.replace(/\.ini$/i,"");
 
-    const speciesName =
-      getAny(ini, ["Species","DinoClass","ClassName","BlueprintPath","CreatureClass","DinoClassName"]);
+    // Species (tries multiple key families)
+    const rawSpecies =
+      getAny(ini, ["Species","DinoClass","ClassName","BlueprintPath","CreatureClass","DinoClassName","Blueprint","BP","Class"]);
+    const speciesGuess = guessSpeciesFromValue(rawSpecies);
 
-    // if we get a blueprint path like "...Rex_Character_BP_C", extract "Rex"
-    let speciesGuess = speciesName;
-    if (speciesGuess && speciesGuess.includes("_Character_BP")) {
-      speciesGuess = speciesGuess.split("_Character_BP")[0];
-    }
-    if (speciesGuess && speciesGuess.includes("/")) {
-      const last = speciesGuess.split("/").pop();
-      if (last) speciesGuess = last;
-    }
-    speciesGuess = cleanStr(speciesGuess);
-
+    // Sex
     const sex = toSex(getAny(ini, ["Sex","Gender","bIsFemale","IsFemale"]));
 
+    // Level
+    const lvl = toInt(getAny(ini, ["Level","DinoLevel","CharacterLevel","BaseLevel","CurrentLevel","MaxLevel"]));
+
+    // Mutations
     const mutM = toInt(getAny(ini, [
-      "MutationsMaternal","MutationMaternal","MutationCountMaternal","MatMut","MaternalMutations","MaternalMutationCount"
+      "MutationsMaternal","MutationMaternal","MutationCountMaternal","MatMut","MaternalMutations","MaternalMutationCount",
+      "MotherMutations","MaternalMutation"
     ])) ?? 0;
 
     const mutP = toInt(getAny(ini, [
-      "MutationsPaternal","MutationPaternal","MutationCountPaternal","PatMut","PaternalMutations","PaternalMutationCount"
+      "MutationsPaternal","MutationPaternal","MutationCountPaternal","PatMut","PaternalMutations","PaternalMutationCount",
+      "FatherMutations","PaternalMutation"
     ])) ?? 0;
 
-    // Stats (we try multiple key styles)
-    const health = toFloat(getAny(ini, ["Health","StatHealth","BaseHealth","HP","HealthValue"]));
-    const stamina = toFloat(getAny(ini, ["Stamina","StatStamina","BaseStamina","Stam","StaminaValue"]));
-    const oxygen = toFloat(getAny(ini, ["Oxygen","StatOxygen","BaseOxygen","Oxy","OxygenValue"]));
-    const food = toFloat(getAny(ini, ["Food","StatFood","BaseFood","FoodValue"]));
-    const weight = toFloat(getAny(ini, ["Weight","StatWeight","BaseWeight","Wt","WeightValue"]));
-    const melee = toFloat(getAny(ini, ["Melee","MeleeDamage","StatMelee","BaseMelee","MeleeValue"]));
-    const speed = toFloat(getAny(ini, ["Speed","MovementSpeed","StatSpeed","BaseSpeed","SpeedValue"]));
+    // Stats (multiple naming variants; values may appear as current/max -> we take first number)
+    const health = toFloat(getAny(ini, ["Health","StatHealth","BaseHealth","HP","HealthValue","HealthAmount"]));
+    const stamina = toFloat(getAny(ini, ["Stamina","StatStamina","BaseStamina","Stam","StaminaValue","StaminaAmount"]));
+    const oxygen = toFloat(getAny(ini, ["Oxygen","StatOxygen","BaseOxygen","Oxy","OxygenValue","OxygenAmount"]));
+    const food = toFloat(getAny(ini, ["Food","StatFood","BaseFood","FoodValue","FoodAmount"]));
+    const weight = toFloat(getAny(ini, ["Weight","StatWeight","BaseWeight","Wt","WeightValue","WeightAmount"]));
+    const melee = toFloat(getAny(ini, ["Melee","MeleeDamage","StatMelee","BaseMelee","MeleeValue","MeleeDamagePercent"]));
+    const speed = toFloat(getAny(ini, ["Speed","MovementSpeed","StatSpeed","BaseSpeed","SpeedValue","MovementSpeedPercent"]));
 
-    // Colors (IDs or names)
-    const c0 = cleanStr(getAny(ini, ["ColorRegion0","Region0Color","Color0","Color0Id","Region0"]));
-    const c1 = cleanStr(getAny(ini, ["ColorRegion1","Region1Color","Color1","Color1Id","Region1"]));
-    const c2 = cleanStr(getAny(ini, ["ColorRegion2","Region2Color","Color2","Color2Id","Region2"]));
-    const c3 = cleanStr(getAny(ini, ["ColorRegion3","Region3Color","Color3","Color3Id","Region3"]));
-    const c4 = cleanStr(getAny(ini, ["ColorRegion4","Region4Color","Color4","Color4Id","Region4"]));
-    const c5 = cleanStr(getAny(ini, ["ColorRegion5","Region5Color","Color5","Color5Id","Region5"]));
+    // Colors (common patterns + indexed/array-style keys)
+    const c0 = cleanStr(getAny(ini, ["ColorRegion0","Region0Color","Color0","Color0Id","Region0","ColorSetIndex0","ColorSetIndices0","ColorSetIndices[0]","Color0Name"]));
+    const c1 = cleanStr(getAny(ini, ["ColorRegion1","Region1Color","Color1","Color1Id","Region1","ColorSetIndex1","ColorSetIndices1","ColorSetIndices[1]","Color1Name"]));
+    const c2 = cleanStr(getAny(ini, ["ColorRegion2","Region2Color","Color2","Color2Id","Region2","ColorSetIndex2","ColorSetIndices2","ColorSetIndices[2]","Color2Name"]));
+    const c3 = cleanStr(getAny(ini, ["ColorRegion3","Region3Color","Color3","Color3Id","Region3","ColorSetIndex3","ColorSetIndices3","ColorSetIndices[3]","Color3Name"]));
+    const c4 = cleanStr(getAny(ini, ["ColorRegion4","Region4Color","Color4","Color4Id","Region4","ColorSetIndex4","ColorSetIndices4","ColorSetIndices[4]","Color4Name"]));
+    const c5 = cleanStr(getAny(ini, ["ColorRegion5","Region5Color","Color5","Color5Id","Region5","ColorSetIndex5","ColorSetIndices5","ColorSetIndices[5]","Color5Name"]));
 
-    // Fill the existing form fields
+    // Fill form
     el("dname").value = dinoName || "";
-    if (speciesGuess) {
-      const sid = await findSpeciesIdByName(speciesGuess);
-      if (sid) el("species").value = sid;
-      else {
-        // keep current selection but inform user
-        el("importInfo").textContent =
-          `Import ok, aber Spezies "${speciesGuess}" nicht in Triforce gefunden. Bitte Spezies im Dropdown wählen oder in Supabase → species anlegen.`;
-      }
-    }
-
     el("sex").value = sex || "unknown";
     el("mutm").value = String(mutM ?? 0);
     el("mutp").value = String(mutP ?? 0);
+    el("lvl").value = (lvl != null) ? String(lvl) : "";
 
-    // optional stats
+    // species select best match
+    if (speciesGuess) {
+      const sid = await findSpeciesIdByBestMatch(speciesGuess);
+      if (sid) el("species").value = sid;
+    }
+
+    // stats
     if (health != null) el("hp").value = String(health);
     if (stamina != null) el("stam").value = String(stamina);
     if (oxygen != null) el("oxy").value = String(oxygen);
@@ -325,7 +425,7 @@
     if (melee != null) el("melee").value = String(melee);
     if (speed != null) el("speed").value = String(speed);
 
-    // optional colors (store as name/id string)
+    // colors
     if (c0 != null) el("c0").value = c0;
     if (c1 != null) el("c1").value = c1;
     if (c2 != null) el("c2").value = c2;
@@ -333,18 +433,17 @@
     if (c4 != null) el("c4").value = c4;
     if (c5 != null) el("c5").value = c5;
 
-    // show info
+    // message
     const spTxt = speciesGuess ? `Spezies-Vorschlag: ${speciesGuess}` : "Spezies nicht erkannt";
-    el("importInfo").textContent = `INI geladen ✓  Name: ${dinoName || "-"}  | ${spTxt}  | Mut: ${mutM}/${mutP}  → Jetzt nur noch „Speichern“ klicken.`;
+    let msg = `INI geladen ✓  Name: ${dinoName || "-"}  | ${spTxt}  | Level: ${lvl ?? "-"}  | Mut: ${mutM}/${mutP}  → Jetzt nur noch „Speichern“ klicken.`;
+    if (speciesGuess) {
+      const sid = await findSpeciesIdByBestMatch(speciesGuess);
+      if (!sid) msg += `  (Hinweis: Spezies "${speciesGuess}" ist noch nicht in Triforce → Supabase → species anlegen.)`;
+    }
+    el("importInfo").textContent = msg;
   }
 
-  
-  function parseNumber(v) {
-    if (v === "" || v === null || v === undefined) return null;
-    const n = Number(v);
-    return Number.isFinite(n) ? n : null;
-  }
-
+  // ---------- Create Dino ----------
   async function createDino() {
     const { data: { user } } = await sb.auth.getUser();
     if (!user) return alert("Bitte einloggen.");
@@ -353,6 +452,7 @@
       species_id: el("species").value,
       name: el("dname").value.trim(),
       sex: el("sex").value,
+      level: parseInt(el("lvl").value || "", 10) || null,
       breeding_status: el("status").value,
       mut_maternal: parseInt(el("mutm").value || "0", 10),
       mut_paternal: parseInt(el("mutp").value || "0", 10),
@@ -362,7 +462,6 @@
 
     const ins = await sb.from("creatures").insert(payload).select("id").single();
     if (ins.error) return alert(ins.error.message);
-
     const cid = ins.data.id;
 
     // stats optional
@@ -378,7 +477,7 @@
     };
     await sb.from("creature_stats").upsert(stats);
 
-    // colors optional (store as name for now)
+    // colors optional (store as name/id string for now)
     const colors = {
       creature_id: cid,
       region0_name: el("c0").value || null,
@@ -390,23 +489,25 @@
     };
     await sb.from("creature_colors").upsert(colors);
 
+    // clear a few fields
     el("dname").value = "";
+    el("lvl").value = "";
     await loadLibrary();
     alert("Gespeichert.");
   }
 
+  // ---------- Library ----------
   async function loadLibrary() {
     const q = el("q").value.trim().toLowerCase();
 
-    // join-ish: fetch creatures + species + stats + colors
     const { data: creatures, error } = await sb
       .from("creatures")
-      .select(`id,name,sex,breeding_status,mut_maternal,mut_paternal,tags,
+      .select(`id,name,sex,level,breeding_status,mut_maternal,mut_paternal,tags,
               species:species_id(name),
               stats:creature_stats(health,melee,weight),
               colors:creature_colors(region0_name,region1_name,region2_name,region3_name,region4_name,region5_name)`)
       .order("created_at", { ascending: false })
-      .limit(200);
+      .limit(300);
 
     if (error) { alert(error.message); return; }
 
@@ -433,6 +534,7 @@
         <td>${c.name}</td>
         <td>${c.species?.name || "-"}</td>
         <td>${c.sex}</td>
+        <td>${c.level ?? "-"}</td>
         <td>${c.breeding_status}</td>
         <td class="mut">${m} / ${p} / ${t}</td>
         <td>${hp} / ${ml} / ${wt}</td>
@@ -441,6 +543,7 @@
     }).join("");
   }
 
+  // ---------- Buttons ----------
   el("btnLogin").onclick = async () => {
     const email = el("email").value.trim();
     const password = el("pw").value;
@@ -464,19 +567,21 @@
   };
 
   el("btnCreate").onclick = createDino;
-el("btnReload").onclick = loadLibrary;
+  el("btnReload").onclick = loadLibrary;
 
-el("btnImportIni").onclick = async () => {
-  const f = el("iniFile").files?.[0];
-  if (!f) return alert("Bitte eine .ini Datei auswählen.");
-  try {
-    await importAsaIni(f);
-  } catch (e) {
-    console.error(e);
-    alert("Import fehlgeschlagen. Wenn du magst, schick mir ein Beispiel der INI (ohne private Daten), dann passe ich den Parser an.");
-  }
-};
+  el("btnImportIni").onclick = async () => {
+    const f = el("iniFile").files?.[0];
+    if (!f) return alert("Bitte eine .ini Datei auswählen.");
+    try {
+      await importAsaIni(f);
+    } catch (e) {
+      console.error(e);
+      alert("Import fehlgeschlagen. Öffne 'Import-Details (Debug)' und schick mir die Key-Namen, dann passe ich es exakt an.");
+    }
+  };
 
+  sb.auth.onAuthStateChange(() => refreshMe());
+  refreshMe();
 </script>
 </body>
 </html>
