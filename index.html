@@ -347,7 +347,13 @@
   async function loadSpecies() {
     const { data, error } = await sb.from("species").select("*").order("name");
     if (error) { alert(error.message); return; }
-    el("species").innerHTML = data.map(s => `<option value="${s.id}">${s.name}</option>`).join("");
+    el("species").innerHTML =
+  `<option value="">– Spezies wählen –</option>` +
+  data.map(s => `<option value="${s.id}">${s.name}</option>`).join("");
+
+// Standard: keine Spezies vorausgewählt
+el("species").value = "";
+
   }
 
   function parseNumber(v) {
@@ -613,10 +619,17 @@
     el("mutp").value = String(mutP ?? 0);
     el("lvl").value = (lvl != null) ? String(lvl) : "";
 
+        // Standard: Spezies zurücksetzen
+    el("species").value = "";
+
+    // Wenn wir eine passende Spezies in der Tabelle finden → setzen
     if (speciesGuess) {
       const sid = await findSpeciesIdByBestMatch(speciesGuess);
-      if (sid) el("species").value = sid;
+      if (sid) {
+        el("species").value = sid;
+      }
     }
+
 
     if (health != null) el("hp").value = String(health);
     if (stamina != null) el("stam").value = String(stamina);
@@ -644,7 +657,7 @@
     if (!user) return alert("Bitte einloggen.");
 
     const payload = {
-      species_id: el("species").value,
+      species_id: el("species").value || null,
       name: el("dname").value.trim(),
       sex: el("sex").value,
       level: parseInt(el("lvl").value || "", 10) || null,
@@ -708,17 +721,19 @@
       return (c.name || "").toLowerCase().includes(q) || tags.includes(q);
     });
 
-    el("rows").innerHTML = filtered.map(c => {
+        el("rows").innerHTML = filtered.map(c => {
       const m = c.mut_maternal ?? 0;
       const p = c.mut_paternal ?? 0;
       const t = m + p;
 
       const st = c.stats || {};
-      const hp = st.health ?? "-";
-      const ml = st.melee ?? "-";
-      const wt = st.weight ?? "-";
+      const fmt = (v) => (v == null ? "-" : Math.round(v));
+      const hp = fmt(st.health);
+      const ml = fmt(st.melee);
+      const wt = fmt(st.weight);
 
       const col = c.colors || {};
+
 
       const sexClass = c.sex === "male" ? "pill-sex-male"
                         : c.sex === "female" ? "pill-sex-female"
