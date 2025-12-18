@@ -241,7 +241,7 @@
   }
 
   // -------- ASA .ini Import helpers --------
-  function parseIni(text) {
+    function parseIni(text) {
     const sections = {};
     let current = "_";
     sections[current] = {};
@@ -252,6 +252,7 @@
       if (!line) continue;
       if (line.startsWith(";") || line.startsWith("#")) continue;
 
+      // [Section]
       const sec = line.match(/^\[(.+?)\]$/);
       if (sec) {
         current = sec[1].trim();
@@ -259,15 +260,17 @@
         continue;
       }
 
+      // key=value
       const eq = line.indexOf("=");
       if (eq > 0) {
         const key = line.slice(0, eq).trim();
-        const value = line.slice(edi + 1).trim();
+        const value = line.slice(eq + 1).trim();
         sections[current][key] = value;
       }
     }
     return sections;
   }
+
 
   function cleanStr(v) {
     if (v == null) return null;
