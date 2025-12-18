@@ -75,6 +75,14 @@
       <button id="btnSignup" class="secondary">Registrieren</button>
       <button id="btnLogout" style="display:none;" class="secondary">Logout</button>
     </div>
+
+    <div style="margin-top:10px;" class="row">
+      <button id="btnDiscord" class="secondary" type="button">
+        Mit Discord einloggen
+      </button>
+      <span class="small">OAuth von Supabase (Discord-Provider) – kein Passwort nötig.</span>
+    </div>
+
     <div id="me" class="small" style="margin-top:8px;"></div>
   </div>
 
@@ -188,10 +196,10 @@
 
 <script>
   // =========================
-  // 1) SET THESE TWO VALUES:
+  // 1) HIER DEINE SUPABASE-DATEN EINTRAGEN:
   // =========================
   const SUPABASE_URL = "https://anxsdcmjknxgmdytrplf.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFueHNkY21qa254Z21keXRycGxmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYwNTM3ODgsImV4cCI6MjA4MTYyOTc4OH0.a8Es6bJaXfHDjXz2uwflDt7FMnQhWQN7X-LZe4voPIg";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFueHNkY21qa254Z21keXRycGxmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYwNTM3ODgsImV4cCI6MjA4MTYyOTc4OH0.a8Es6bJaXfHDjXz2uwflDt7FMnQhWQN7X-LZe4voPIg";
 
   const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   const el = (id) => document.getElementById(id);
@@ -254,7 +262,7 @@ const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
       const eq = line.indexOf("=");
       if (eq > 0) {
         const key = line.slice(0, eq).trim();
-        const value = line.slice(eq + 1).trim();
+        const value = line.slice(edi + 1).trim();
         sections[current][key] = value;
       }
     }
@@ -289,7 +297,6 @@ const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
     const s = (cleanStr(v) || "").toLowerCase();
     if (["male","männlich","maennlich","m"].includes(s)) return "male";
     if (["female","weiblich","w"].includes(s)) return "female";
-    // some exports use booleans/0/1
     if (s === "0" || s === "false") return "male";
     if (s === "1" || s === "true") return "female";
     return "unknown";
@@ -312,22 +319,14 @@ const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
     let v = cleanStr(raw);
     if (!v) return null;
 
-    // if blueprint-like, take last part and remove suffix
     if (v.includes("/")) v = v.split("/").pop();
-    // common ASA/ARK class pattern
     v = v.replace(/_Character_BP.*$/i, "");
     v = v.replace(/_BP.*$/i, "");
     v = v.replace(/_C$/i, "");
     v = v.replace(/BlueprintGeneratedClass/i, "").trim();
-
-    // strip quotes again & weird punctuation
     v = v.replace(/[^a-zA-Z0-9 _-]/g, " ").trim();
-    // collapse spaces
     v = v.replace(/\s+/g, " ");
-
-    // if still huge, take first token
     if (v.length > 40) v = v.split(" ")[0];
-
     return v || null;
   }
 
@@ -337,11 +336,9 @@ const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
     const { data, error } = await sb.from("species").select("id,name");
     if (error) return null;
 
-    // exact
     let hit = data.find(s => (s.name || "").trim().toLowerCase() === want);
     if (hit) return hit.id;
 
-    // contains (either direction)
     hit = data.find(s => (s.name || "").toLowerCase().includes(want) || want.includes((s.name||"").toLowerCase()));
     return hit ? hit.id : null;
   }
@@ -350,7 +347,6 @@ const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
     const text = await file.text();
     const ini = parseIni(text);
 
-    // Debug output (sections + keys)
     const secNames = Object.keys(ini);
     let debug = "";
     for (const s of secNames) {
@@ -359,23 +355,18 @@ const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
     }
     el("importDebug").textContent = debug.slice(0, 25000);
 
-    // Name
     const dinoName =
       getAny(ini, ["DinoName","Name","CreatureName","TamedName","Dino Name","TamedNameString"]) ||
       file.name.replace(/\.ini$/i,"");
 
-    // Species (tries multiple key families)
     const rawSpecies =
       getAny(ini, ["Species","DinoClass","ClassName","BlueprintPath","CreatureClass","DinoClassName","Blueprint","BP","Class"]);
     const speciesGuess = guessSpeciesFromValue(rawSpecies);
 
-    // Sex
     const sex = toSex(getAny(ini, ["Sex","Gender","bIsFemale","IsFemale"]));
 
-    // Level
     const lvl = toInt(getAny(ini, ["Level","DinoLevel","CharacterLevel","BaseLevel","CurrentLevel","MaxLevel"]));
 
-    // Mutations
     const mutM = toInt(getAny(ini, [
       "MutationsMaternal","MutationMaternal","MutationCountMaternal","MatMut","MaternalMutations","MaternalMutationCount",
       "MotherMutations","MaternalMutation"
@@ -386,7 +377,6 @@ const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
       "FatherMutations","PaternalMutation"
     ])) ?? 0;
 
-    // Stats (multiple naming variants; values may appear as current/max -> we take first number)
     const health = toFloat(getAny(ini, ["Health","StatHealth","BaseHealth","HP","HealthValue","HealthAmount"]));
     const stamina = toFloat(getAny(ini, ["Stamina","StatStamina","BaseStamina","Stam","StaminaValue","StaminaAmount"]));
     const oxygen = toFloat(getAny(ini, ["Oxygen","StatOxygen","BaseOxygen","Oxy","OxygenValue","OxygenAmount"]));
@@ -395,7 +385,6 @@ const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
     const melee = toFloat(getAny(ini, ["Melee","MeleeDamage","StatMelee","BaseMelee","MeleeValue","MeleeDamagePercent"]));
     const speed = toFloat(getAny(ini, ["Speed","MovementSpeed","StatSpeed","BaseSpeed","SpeedValue","MovementSpeedPercent"]));
 
-    // Colors (common patterns + indexed/array-style keys)
     const c0 = cleanStr(getAny(ini, ["ColorRegion0","Region0Color","Color0","Color0Id","Region0","ColorSetIndex0","ColorSetIndices0","ColorSetIndices[0]","Color0Name"]));
     const c1 = cleanStr(getAny(ini, ["ColorRegion1","Region1Color","Color1","Color1Id","Region1","ColorSetIndex1","ColorSetIndices1","ColorSetIndices[1]","Color1Name"]));
     const c2 = cleanStr(getAny(ini, ["ColorRegion2","Region2Color","Color2","Color2Id","Region2","ColorSetIndex2","ColorSetIndices2","ColorSetIndices[2]","Color2Name"]));
@@ -403,20 +392,17 @@ const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
     const c4 = cleanStr(getAny(ini, ["ColorRegion4","Region4Color","Color4","Color4Id","Region4","ColorSetIndex4","ColorSetIndices4","ColorSetIndices[4]","Color4Name"]));
     const c5 = cleanStr(getAny(ini, ["ColorRegion5","Region5Color","Color5","Color5Id","Region5","ColorSetIndex5","ColorSetIndices5","ColorSetIndices[5]","Color5Name"]));
 
-    // Fill form
     el("dname").value = dinoName || "";
     el("sex").value = sex || "unknown";
     el("mutm").value = String(mutM ?? 0);
     el("mutp").value = String(mutP ?? 0);
     el("lvl").value = (lvl != null) ? String(lvl) : "";
 
-    // species select best match
     if (speciesGuess) {
       const sid = await findSpeciesIdByBestMatch(speciesGuess);
       if (sid) el("species").value = sid;
     }
 
-    // stats
     if (health != null) el("hp").value = String(health);
     if (stamina != null) el("stam").value = String(stamina);
     if (oxygen != null) el("oxy").value = String(oxygen);
@@ -425,7 +411,6 @@ const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
     if (melee != null) el("melee").value = String(melee);
     if (speed != null) el("speed").value = String(speed);
 
-    // colors
     if (c0 != null) el("c0").value = c0;
     if (c1 != null) el("c1").value = c1;
     if (c2 != null) el("c2").value = c2;
@@ -433,7 +418,6 @@ const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
     if (c4 != null) el("c4").value = c4;
     if (c5 != null) el("c5").value = c5;
 
-    // message
     const spTxt = speciesGuess ? `Spezies-Vorschlag: ${speciesGuess}` : "Spezies nicht erkannt";
     let msg = `INI geladen ✓  Name: ${dinoName || "-"}  | ${spTxt}  | Level: ${lvl ?? "-"}  | Mut: ${mutM}/${mutP}  → Jetzt nur noch „Speichern“ klicken.`;
     if (speciesGuess) {
@@ -464,7 +448,6 @@ const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
     if (ins.error) return alert(ins.error.message);
     const cid = ins.data.id;
 
-    // stats optional
     const stats = {
       creature_id: cid,
       health: parseNumber(el("hp").value),
@@ -477,7 +460,6 @@ const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
     };
     await sb.from("creature_stats").upsert(stats);
 
-    // colors optional (store as name/id string for now)
     const colors = {
       creature_id: cid,
       region0_name: el("c0").value || null,
@@ -489,7 +471,6 @@ const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
     };
     await sb.from("creature_colors").upsert(colors);
 
-    // clear a few fields
     el("dname").value = "";
     el("lvl").value = "";
     await loadLibrary();
@@ -564,6 +545,22 @@ const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
   el("btnLogout").onclick = async () => {
     await sb.auth.signOut();
     await refreshMe();
+  };
+
+  // 👉 NEU: Discord-Login
+  el("btnDiscord").onclick = async () => {
+    try {
+      const { error } = await sb.auth.signInWithOAuth({
+        provider: "discord",
+        options: {
+          redirectTo: window.location.origin  // deine Triforce-URL
+        }
+      });
+      if (error) alert(error.message);
+    } catch (e) {
+      console.error(e);
+      alert("Discord-Login fehlgeschlagen. Check bitte in Supabase unter Authentication → Providers → Discord, ob Client ID/Secret richtig sind.");
+    }
   };
 
   el("btnCreate").onclick = createDino;
