@@ -8,189 +8,305 @@
 
   <style>
     :root{
-      --bg:#ffffff; --fg:#111827; --muted:#6b7280; --card:#ffffff; --border:#e5e7eb;
-      --th:#f3f4f6; --btn:#111827; --btnfg:#ffffff; --input:#ffffff;
-      --shadow: 0 1px 2px rgba(0,0,0,.06);
+      --bg:#ffffff; --fg:#0f172a; --muted:#6b7280; --card:#ffffff; --border:#e5e7eb;
+      --th:#f3f4f6; --btn:#111827; --btnfg:#ffffff; --input:#f9fafb;
+      --shadow: 0 10px 25px rgba(15,23,42,.08);
       --link:#2563eb;
     }
     body.dark{
-      --bg:#0b1220; --fg:#e5e7eb; --muted:#9ca3af; --card:#0f172a; --border:#24324a;
-      --th:#111c33; --btn:#e5e7eb; --btnfg:#111827; --input:#0b1220;
-      --shadow: 0 1px 2px rgba(0,0,0,.35);
+      --bg:#020617; --fg:#e5e7eb; --muted:#9ca3af; --card:#020617; --border:#1f2937;
+      --th:#020617; --btn:#e5e7eb; --btnfg:#020617; --input:#020617;
+      --shadow: 0 18px 45px rgba(0,0,0,.6);
       --link:#60a5fa;
     }
 
-    body { font-family: system-ui, Arial; margin: 20px; background:var(--bg); color:var(--fg); }
-    h1 { margin: 0 0 6px 0; }
+    *{ box-sizing:border-box; }
+
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      margin: 0;
+      background:var(--bg);
+      color:var(--fg);
+    }
+
+    .page {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 24px 16px 40px;
+    }
+
+    h1 { margin: 0 0 4px 0; font-size: 26px; letter-spacing: 0.03em; }
+    h2 { margin: 0 0 8px 0; font-size: 18px; }
+
     a { color: var(--link); }
+
     .row { display:flex; gap:12px; flex-wrap:wrap; align-items:flex-end; }
     input, select, button, textarea {
-      padding:8px; font-size:14px; border:1px solid var(--border); border-radius:8px;
-      background:var(--input); color:var(--fg);
+      padding:8px 10px;
+      font-size:14px;
+      border:1px solid var(--border);
+      border-radius:999px;
+      background:var(--input);
+      color:var(--fg);
+      outline:none;
+      transition:border-color .15s, box-shadow .15s, background .15s;
     }
+    input:focus, select:focus, textarea:focus {
+      border-color:#6366f1;
+      box-shadow:0 0 0 1px rgba(99,102,241,.4);
+    }
+
     button{
       border:1px solid var(--border);
       background:var(--btn); color:var(--btnfg);
       cursor:pointer;
       box-shadow: var(--shadow);
+      border-radius:999px;
+      padding:8px 14px;
+      font-weight:500;
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
     }
     button.secondary{
-      background: transparent; color: var(--fg);
+      background: transparent; color: var(--fg); box-shadow:none;
     }
-    table { border-collapse: collapse; width: 100%; margin-top: 12px; }
-    th, td { border: 1px solid var(--border); padding: 8px; vertical-align: top; }
-    th { background: var(--th); text-align:left; }
-    .card { border:1px solid var(--border); padding:12px; border-radius:12px; margin: 12px 0; background:var(--card); box-shadow: var(--shadow); }
+    button:disabled{
+      opacity:.5;
+      cursor:not-allowed;
+      box-shadow:none;
+    }
+
+    table { border-collapse: collapse; width: 100%; margin-top: 12px; border-radius:18px; overflow:hidden; }
+    th, td { border-bottom: 1px solid var(--border); padding: 8px 10px; vertical-align: top; font-size:13px; }
+    th { background: var(--th); text-align:left; font-weight:600; font-size:12px; text-transform:uppercase; letter-spacing:.06em; }
+    tbody tr:nth-child(even){ background: rgba(148,163,184,.08); }
+    tbody tr:hover{ background: rgba(129,140,248,.12); }
+
+    .card {
+      border-radius:18px;
+      margin: 14px 0;
+      background: radial-gradient(circle at top left, rgba(59,130,246,.1), transparent 50%) , var(--card);
+      border:1px solid var(--border);
+      box-shadow: var(--shadow);
+      padding:16px 16px 18px;
+    }
+
     .mut { font-variant-numeric: tabular-nums; }
+
     .small { color:var(--muted); font-size:12px; }
-    .topbar { display:flex; justify-content:space-between; align-items:flex-end; gap:12px; flex-wrap:wrap; }
-    pre { margin:0; }
+
+    .topbar { display:flex; justify-content:space-between; align-items:flex-end; gap:12px; flex-wrap:wrap; margin-bottom:14px; }
+
+    pre { margin:0; font-size:11px; }
+
     details summary { cursor:pointer; }
+
+    .pill {
+      display:inline-flex;
+      align-items:center;
+      padding:2px 8px;
+      border-radius:999px;
+      font-size:11px;
+      border:1px solid var(--border);
+      gap:4px;
+      background:rgba(15,23,42,.04);
+    }
+    body.dark .pill{ background:rgba(15,23,42,.7); }
+
+    .pill-sex-male { color:#3b82f6; }
+    .pill-sex-female { color:#ec4899; }
+    .pill-status-breeder { color:#22c55e; }
+    .pill-status-reserve { color:#eab308; }
+    .pill-status-retired { color:#a855f7; }
+
+    .layout-two {
+      display:grid;
+      grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+      gap:16px;
+    }
+    @media (max-width: 950px){
+      .layout-two{ grid-template-columns: minmax(0,1fr); }
+    }
+
+    .color-swatches{
+      display:flex;
+      flex-wrap:wrap;
+      gap:4px;
+    }
+    .color-chip{
+      display:inline-flex;
+      align-items:center;
+      gap:4px;
+      padding:2px 6px;
+      border-radius:999px;
+      border:1px solid var(--border);
+      font-size:10px;
+      background:rgba(15,23,42,.03);
+    }
+    body.dark .color-chip{
+      background:rgba(15,23,42,.7);
+    }
+    .color-dot{
+      width:14px;
+      height:14px;
+      border-radius:999px;
+      border:1px solid rgba(0,0,0,.35);
+      box-shadow:0 0 0 1px rgba(255,255,255,.25);
+    }
   </style>
 </head>
 
 <body>
-  <div class="topbar">
-    <div>
-      <h1>Triforce</h1>
-      <div class="small">PC-only Web-App (Supabase + Cloudflare Pages) • ASA (.ini) Import</div>
-    </div>
-    <div class="row" style="align-items:center;">
-      <button id="btnTheme" class="secondary" title="Dark Mode umschalten">🌙 Dark Mode</button>
-    </div>
-  </div>
-
-  <div id="auth" class="card">
-    <h2>Login</h2>
-    <div class="row">
+  <div class="page">
+    <div class="topbar">
       <div>
-        <div>Email</div>
-        <input id="email" type="email" placeholder="name@mail.de"/>
+        <h1>Triforce</h1>
+        <div class="small">Ark: Survival Ascended • Breeding &amp; Library • ASA (.ini) Import</div>
       </div>
-      <div>
-        <div>Passwort</div>
-        <input id="pw" type="password" placeholder="••••••••"/>
+      <div class="row" style="align-items:center;">
+        <button id="btnTheme" class="secondary" title="Dark Mode umschalten">🌙 Dark Mode</button>
       </div>
-      <button id="btnLogin">Login</button>
-      <button id="btnSignup" class="secondary">Registrieren</button>
-      <button id="btnLogout" style="display:none;" class="secondary">Logout</button>
     </div>
 
-    <div style="margin-top:10px;" class="row">
-      <button id="btnDiscord" class="secondary" type="button">
-        Mit Discord einloggen
-      </button>
-      <span class="small">OAuth von Supabase (Discord-Provider) – kein Passwort nötig.</span>
-    </div>
-
-    <div id="me" class="small" style="margin-top:8px;"></div>
-  </div>
-
-  <div id="app" style="display:none;">
-
-    <div class="card">
-      <h2>ASA Import (.ini)</h2>
-      <div class="small">
-        Datei aus: <code>...\ARK Survival Ascended\ShooterGame\Saved\DinoExports</code>
-      </div>
-      <div class="row" style="margin-top:10px;">
-        <input id="iniFile" type="file" accept=".ini" />
-        <button id="btnImportIni">INI einlesen → Formular füllen</button>
-      </div>
-      <div id="importInfo" class="small" style="margin-top:8px;"></div>
-
-      <details style="margin-top:10px;">
-        <summary><b>Import-Details (Debug)</b> <span class="small">(hilft, wenn Farben/Level fehlen)</span></summary>
-        <pre id="importDebug" style="white-space:pre-wrap; background:rgba(127,127,127,.08); padding:10px; border-radius:10px; border:1px solid var(--border); margin-top:10px;"></pre>
-      </details>
-    </div>
-
-    <div class="card">
-      <h2>Neuen Dino anlegen</h2>
+    <div id="auth" class="card">
+      <h2>Login</h2>
       <div class="row">
         <div>
-          <div>Spezies</div>
-          <select id="species"></select>
+          <div class="small">Email</div>
+          <input id="email" type="email" placeholder="name@mail.de"/>
         </div>
         <div>
-          <div>Name</div>
-          <input id="dname" placeholder="z.B. Rex HP-01"/>
+          <div class="small">Passwort</div>
+          <input id="pw" type="password" placeholder="••••••••"/>
         </div>
-        <div>
-          <div>Sex</div>
-          <select id="sex">
-            <option value="unknown">unknown</option>
-            <option value="male">male</option>
-            <option value="female">female</option>
-          </select>
-        </div>
-
-        <div>
-          <div>Level</div>
-          <input id="lvl" type="number" min="1" placeholder="z.B. 141"/>
-        </div>
-
-        <div>
-          <div>Status</div>
-          <select id="status">
-            <option value="unknown">unknown</option>
-            <option value="breeder">breeder</option>
-            <option value="reserve">reserve</option>
-            <option value="retired">retired</option>
-            <option value="baby">baby</option>
-            <option value="egg">egg</option>
-          </select>
-        </div>
-        <div class="mut">
-          <div>Mut M</div>
-          <input id="mutm" type="number" value="0" min="0"/>
-        </div>
-        <div class="mut">
-          <div>Mut P</div>
-          <input id="mutp" type="number" value="0" min="0"/>
-        </div>
-        <button id="btnCreate">Speichern</button>
+        <button id="btnLogin">Login</button>
+        <button id="btnSignup" class="secondary">Registrieren</button>
+        <button id="btnLogout" style="display:none;" class="secondary">Logout</button>
       </div>
 
-      <div style="margin-top:10px;">
-        <details>
-          <summary><b>Stats & Farben (optional)</b></summary>
-          <div class="row" style="margin-top:10px;">
-            <input id="hp" placeholder="Health"/>
-            <input id="stam" placeholder="Stamina"/>
-            <input id="oxy" placeholder="Oxygen"/>
-            <input id="food" placeholder="Food"/>
-            <input id="weight" placeholder="Weight"/>
-            <input id="melee" placeholder="Melee"/>
-            <input id="speed" placeholder="Speed"/>
-          </div>
-          <div class="row" style="margin-top:10px;">
-            <input id="c0" placeholder="Region0 (id oder name)"/>
-            <input id="c1" placeholder="Region1"/>
-            <input id="c2" placeholder="Region2"/>
-            <input id="c3" placeholder="Region3"/>
-            <input id="c4" placeholder="Region4"/>
-            <input id="c5" placeholder="Region5"/>
-          </div>
-        </details>
+      <div style="margin-top:10px;" class="row">
+        <button id="btnDiscord" class="secondary" type="button">
+          <span>Mit Discord einloggen</span>
+        </button>
+        <span class="small">OAuth von Supabase (Discord-Provider) – kein Passwort nötig.</span>
       </div>
+
+      <div id="me" class="small" style="margin-top:8px;"></div>
     </div>
 
-    <div class="card">
-      <h2>Library</h2>
-      <div class="row">
-        <input id="q" placeholder="Suche Name/Tag..." />
-        <button id="btnReload" class="secondary">Neu laden</button>
+    <div id="app" style="display:none;">
+
+      <div class="layout-two">
+        <div class="card">
+          <h2>ASA Import (.ini)</h2>
+          <div class="small">
+            Datei aus: <code>...\ARK Survival Ascended\ShooterGame\Saved\DinoExports</code>
+          </div>
+          <div class="row" style="margin-top:10px;">
+            <input id="iniFile" type="file" accept=".ini" />
+            <button id="btnImportIni">INI einlesen → Formular füllen</button>
+          </div>
+          <div id="importInfo" class="small" style="margin-top:8px;"></div>
+
+          <details style="margin-top:10px;">
+            <summary><b>Import-Details (Debug)</b> <span class="small">(hilft, wenn Farben/Level fehlen)</span></summary>
+            <pre id="importDebug" style="white-space:pre-wrap; background:rgba(15,23,42,.04); padding:10px; border-radius:10px; border:1px solid var(--border); margin-top:10px;"></pre>
+          </details>
+        </div>
+
+        <div class="card">
+          <h2>Neuen Dino anlegen</h2>
+          <div class="row">
+            <div>
+              <div class="small">Spezies</div>
+              <select id="species"></select>
+            </div>
+            <div>
+              <div class="small">Name</div>
+              <input id="dname" placeholder="z.B. Rex HP-01"/>
+            </div>
+            <div>
+              <div class="small">Sex</div>
+              <select id="sex">
+                <option value="unknown">unknown</option>
+                <option value="male">male</option>
+                <option value="female">female</option>
+              </select>
+            </div>
+
+            <div>
+              <div class="small">Level</div>
+              <input id="lvl" type="number" min="1" placeholder="z.B. 141"/>
+            </div>
+
+            <div>
+              <div class="small">Status</div>
+              <select id="status">
+                <option value="unknown">unknown</option>
+                <option value="breeder">breeder</option>
+                <option value="reserve">reserve</option>
+                <option value="retired">retired</option>
+                <option value="baby">baby</option>
+                <option value="egg">egg</option>
+              </select>
+            </div>
+            <div class="mut">
+              <div class="small">Mut M</div>
+              <input id="mutm" type="number" value="0" min="0"/>
+            </div>
+            <div class="mut">
+              <div class="small">Mut P</div>
+              <input id="mutp" type="number" value="0" min="0"/>
+            </div>
+          </div>
+
+          <div style="margin-top:10px;">
+            <details open>
+              <summary><b>Stats &amp; Farben (optional)</b></summary>
+              <div class="row" style="margin-top:10px;">
+                <input id="hp" placeholder="Health"/>
+                <input id="stam" placeholder="Stamina"/>
+                <input id="oxy" placeholder="Oxygen"/>
+                <input id="food" placeholder="Food"/>
+                <input id="weight" placeholder="Weight"/>
+                <input id="melee" placeholder="Melee"/>
+                <input id="speed" placeholder="Speed"/>
+              </div>
+              <div class="row" style="margin-top:10px;">
+                <input id="c0" placeholder="Region0 (RGBA / ID)"/>
+                <input id="c1" placeholder="Region1"/>
+                <input id="c2" placeholder="Region2"/>
+                <input id="c3" placeholder="Region3"/>
+                <input id="c4" placeholder="Region4"/>
+                <input id="c5" placeholder="Region5"/>
+              </div>
+            </details>
+          </div>
+
+          <div style="margin-top:10px;">
+            <button id="btnCreate">Dino speichern</button>
+          </div>
+        </div>
       </div>
-      <table>
-        <thead>
-          <tr>
-            <th>Name</th><th>Spezies</th><th>Sex</th><th>Level</th><th>Status</th>
-            <th>Mut (M/P/T)</th><th>Stats (HP / Melee / Wt)</th><th>Farben (R0..R5)</th>
-          </tr>
-        </thead>
-        <tbody id="rows"></tbody>
-      </table>
+
+      <div class="card">
+        <h2>Library</h2>
+        <div class="row">
+          <input id="q" placeholder="Suche Name/Tag..." style="min-width:220px;"/>
+          <button id="btnReload" class="secondary">Neu laden</button>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Name</th><th>Spezies</th><th>Sex</th><th>Level</th><th>Status</th>
+              <th>Mut (M/P/T)</th><th>Stats (HP / Melee / Wt)</th><th>Farben</th>
+            </tr>
+          </thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </div>
+
     </div>
   </div>
 
@@ -241,7 +357,7 @@
   }
 
   // -------- ASA .ini Import helpers --------
-    function parseIni(text) {
+  function parseIni(text) {
     const sections = {};
     let current = "_";
     sections[current] = {};
@@ -252,7 +368,6 @@
       if (!line) continue;
       if (line.startsWith(";") || line.startsWith("#")) continue;
 
-      // [Section]
       const sec = line.match(/^\[(.+?)\]$/);
       if (sec) {
         current = sec[1].trim();
@@ -260,7 +375,6 @@
         continue;
       }
 
-      // key=value
       const eq = line.indexOf("=");
       if (eq > 0) {
         const key = line.slice(0, eq).trim();
@@ -270,7 +384,6 @@
     }
     return sections;
   }
-
 
   function cleanStr(v) {
     if (v == null) return null;
@@ -305,21 +418,18 @@
     return "unknown";
   }
 
-    function getAny(sections, keys) {
-    // Sucht einen Wert über alle Sections, case-insensitive
+  // case-insensitive Key-Suche
+  function getAny(sections, keys) {
     for (const wanted of keys) {
       const wantedLower = wanted.toLowerCase();
       for (const secName of Object.keys(sections)) {
         const sec = sections[secName];
         if (!sec) continue;
 
-        // 1) exakte Übereinstimmung
         if (Object.prototype.hasOwnProperty.call(sec, wanted)) {
           const val = cleanStr(sec[wanted]);
           if (val != null) return val;
         }
-
-        // 2) gleiche Schreibweise, nur Groß/Kleinschreibung anders
         for (const actualKey of Object.keys(sec)) {
           if (actualKey.toLowerCase() === wantedLower) {
             const val = cleanStr(sec[actualKey]);
@@ -330,7 +440,6 @@
     }
     return null;
   }
-
 
   function guessSpeciesFromValue(raw) {
     let v = cleanStr(raw);
@@ -360,6 +469,45 @@
     return hit ? hit.id : null;
   }
 
+  function parseColorRGBA(str) {
+    if (!str) return null;
+    const m = str.match(/R=([0-9.]+).*G=([0-9.]+).*B=([0-9.]+)/i);
+    if (!m) return null;
+    const r = Math.round(parseFloat(m[1]) * 255);
+    const g = Math.round(parseFloat(m[2]) * 255);
+    const b = Math.round(parseFloat(m[3]) * 255);
+    if (![r,g,b].every(n => Number.isFinite(n))) return null;
+    return { r, g, b };
+  }
+
+  function renderColorSwatches(colorRow) {
+    if (!colorRow) return "-";
+    const vals = [
+      colorRow.region0_name,
+      colorRow.region1_name,
+      colorRow.region2_name,
+      colorRow.region3_name,
+      colorRow.region4_name,
+      colorRow.region5_name
+    ];
+    const labels = ["R0","R1","R2","R3","R4","R5"];
+
+    const parts = [];
+    for (let i=0;i<vals.length;i++) {
+      const raw = vals[i];
+      if (!raw) continue;
+      const rgb = parseColorRGBA(raw);
+      const preview = rgb
+        ? `<span class="color-dot" style="background:rgb(${rgb.r},${rgb.g},${rgb.b});"></span>`
+        : "";
+      const shortText = rgb ? "" : (String(raw).slice(0,16) + (String(raw).length>16?"…":""));
+      parts.push(
+        `<span class="color-chip">${preview}<span>${labels[i]}</span>${shortText ? `<span>${shortText}</span>` : ""}</span>`
+      );
+    }
+    return parts.length ? `<div class="color-swatches">${parts.join(" ")}</div>` : "-";
+  }
+
   async function importAsaIni(file) {
     const text = await file.text();
     const ini = parseIni(text);
@@ -372,58 +520,66 @@
     }
     el("importDebug").textContent = debug.slice(0, 25000);
 
+        // Name: zuerst TamedName, dann DinoNameTag, sonst Dateiname
     const dinoName =
-      getAny(ini, ["DinoName","Name","CreatureName","TamedName","Dino Name","TamedNameString"]) ||
-      file.name.replace(/\.ini$/i,"");
+      getAny(ini, [
+        "TamedName",        // dein gezähmter Name
+        "DinoNameTag",      // z.B. "Rex"
+        "DinoName",
+        "Name",
+        "CreatureName",
+        "Dino Name",
+        "TamedNameString"
+      ]) || file.name.replace(/\.ini$/i,"");
 
-    const rawSpecies =
-      getAny(ini, ["Species","DinoClass","ClassName","BlueprintPath","CreatureClass","DinoClassName","Blueprint","BP","Class"]);
-    const speciesGuess = guessSpeciesFromValue(rawSpecies);
+    // Spezies:
+    // 1) zuerst NameTag/Species direkt verwenden (Rex, Spino, Pego ...)
+    // 2) wenn das fehlt, Blueprint/Class zerlegen (…Rex_Character_BP_C → Rex)
+    const speciesTag = getAny(ini, ["DinoNameTag","Species"]);
+    let speciesGuess = speciesTag;
+    if (!speciesGuess) {
+      const rawSpecies =
+        getAny(ini, ["DinoClass","ClassName","BlueprintPath","CreatureClass","DinoClassName","Blueprint","BP","Class"]);
+      speciesGuess = guessSpeciesFromValue(rawSpecies);
+    }
 
-    const sex = toSex(getAny(ini, ["Sex","Gender","bIsFemale","IsFemale"]));
 
-    const lvl = toInt(getAny(ini, ["Level","DinoLevel","CharacterLevel","BaseLevel","CurrentLevel","MaxLevel"]));
+    const sex = toSex(getAny(ini, ["bIsFemale","Sex","Gender","IsFemale"]));
 
-        const mutM = toInt(getAny(ini, [
+    const lvl = toInt(getAny(ini, ["CharacterLevel","Level","DinoLevel","BaseLevel","CurrentLevel","MaxLevel"]));
+
+    const mutM = toInt(getAny(ini, [
+      "RandomMutationsMale",
       "MutationsMaternal","MutationMaternal","MutationCountMaternal","MatMut",
       "MaternalMutations","MaternalMutationCount",
-      "MotherMutations","MaternalMutation",
-      "RandomMutationsMale"          // <- dein INI-Key
+      "MotherMutations","MaternalMutation"
     ])) ?? 0;
 
     const mutP = toInt(getAny(ini, [
+      "RandomMutationsFemale",
       "MutationsPaternal","MutationPaternal","MutationCountPaternal","PatMut",
       "PaternalMutations","PaternalMutationCount",
-      "FatherMutations","PaternalMutation",
-      "RandomMutationsFemale"        // <- dein INI-Key
+      "FatherMutations","PaternalMutation"
     ])) ?? 0;
 
-
-        const health = toFloat(getAny(ini, ["Health","StatHealth","BaseHealth","HP","HealthValue","HealthAmount"]));
+    const health = toFloat(getAny(ini, ["Health","StatHealth","BaseHealth","HP","HealthValue","HealthAmount"]));
     const stamina = toFloat(getAny(ini, ["Stamina","StatStamina","BaseStamina","Stam","StaminaValue","StaminaAmount"]));
     const oxygen = toFloat(getAny(ini, ["Oxygen","StatOxygen","BaseOxygen","Oxy","OxygenValue","OxygenAmount"]));
-
-    const food  = toFloat(getAny(ini, [
-      "Food","food","StatFood","BaseFood","FoodValue","FoodAmount"
-    ]));
-
+    const food  = toFloat(getAny(ini, ["Food","food","StatFood","BaseFood","FoodValue","FoodAmount"]));
     const weight = toFloat(getAny(ini, ["Weight","StatWeight","BaseWeight","Wt","WeightValue","WeightAmount"]));
-
     const melee = toFloat(getAny(ini, [
-      "Melee","MeleeDamage","Melee Damage",          // <- dein Key
+      "Melee Damage","MeleeDamage","Melee",
       "StatMelee","BaseMelee","MeleeValue","MeleeDamagePercent"
     ]));
-
     const speed = toFloat(getAny(ini, [
-      "Speed","MovementSpeed","Movement Speed",      // <- dein Key
+      "Movement Speed","MovementSpeed","Speed",
       "StatSpeed","BaseSpeed","SpeedValue","MovementSpeedPercent"
     ]));
 
-
-        const c0 = cleanStr(getAny(ini, [
+    const c0 = cleanStr(getAny(ini, [
       "ColorRegion0","Region0Color","Color0","Color0Id","Region0",
       "ColorSetIndex0","ColorSetIndices0","ColorSetIndices[0]",
-      "Color0Name","ColorSet[0]"          // <- dein Key
+      "Color0Name","ColorSet[0]"
     ]));
     const c1 = cleanStr(getAny(ini, [
       "ColorRegion1","Region1Color","Color1","Color1Id","Region1",
@@ -450,7 +606,6 @@
       "ColorSetIndex5","ColorSetIndices5","ColorSetIndices[5]",
       "Color5Name","ColorSet[5]"
     ]));
-
 
     el("dname").value = dinoName || "";
     el("sex").value = sex || "unknown";
@@ -479,11 +634,7 @@
     if (c5 != null) el("c5").value = c5;
 
     const spTxt = speciesGuess ? `Spezies-Vorschlag: ${speciesGuess}` : "Spezies nicht erkannt";
-    let msg = `INI geladen ✓  Name: ${dinoName || "-"}  | ${spTxt}  | Level: ${lvl ?? "-"}  | Mut: ${mutM}/${mutP}  → Jetzt nur noch „Speichern“ klicken.`;
-    if (speciesGuess) {
-      const sid = await findSpeciesIdByBestMatch(speciesGuess);
-      if (!sid) msg += `  (Hinweis: Spezies "${speciesGuess}" ist noch nicht in Triforce → Supabase → species anlegen.)`;
-    }
+    let msg = `INI geladen ✓  Name: ${dinoName || "-"}  | ${spTxt}  | Level: ${lvl ?? "-"}  | Mut: ${mutM}/${mutP}  → Jetzt nur noch „Dino speichern“ klicken.`;
     el("importInfo").textContent = msg;
   }
 
@@ -568,18 +719,24 @@
       const wt = st.weight ?? "-";
 
       const col = c.colors || {};
-      const cols = [col.region0_name,col.region1_name,col.region2_name,col.region3_name,col.region4_name,col.region5_name]
-        .map(x => x || "-").join(" / ");
+
+      const sexClass = c.sex === "male" ? "pill-sex-male"
+                        : c.sex === "female" ? "pill-sex-female"
+                        : "";
+      const statusClass = c.breeding_status === "breeder" ? "pill-status-breeder"
+                        : c.breeding_status === "reserve" ? "pill-status-reserve"
+                        : c.breeding_status === "retired" ? "pill-status-retired"
+                        : "";
 
       return `<tr>
         <td>${c.name}</td>
         <td>${c.species?.name || "-"}</td>
-        <td>${c.sex}</td>
+        <td><span class="pill ${sexClass}">${c.sex}</span></td>
         <td>${c.level ?? "-"}</td>
-        <td>${c.breeding_status}</td>
+        <td><span class="pill ${statusClass}">${c.breeding_status}</span></td>
         <td class="mut">${m} / ${p} / ${t}</td>
         <td>${hp} / ${ml} / ${wt}</td>
-        <td>${cols}</td>
+        <td>${renderColorSwatches(col)}</td>
       </tr>`;
     }).join("");
   }
@@ -607,19 +764,17 @@
     await refreshMe();
   };
 
-  // 👉 NEU: Discord-Login
+  // Discord-Login
   el("btnDiscord").onclick = async () => {
     try {
       const { error } = await sb.auth.signInWithOAuth({
         provider: "discord",
-        options: {
-          redirectTo: window.location.origin  // deine Triforce-URL
-        }
+        options: { redirectTo: window.location.origin }
       });
       if (error) alert(error.message);
     } catch (e) {
       console.error(e);
-      alert("Discord-Login fehlgeschlagen. Check bitte in Supabase unter Authentication → Providers → Discord, ob Client ID/Secret richtig sind.");
+      alert("Discord-Login fehlgeschlagen. Check in Supabase unter Authentication → Providers → Discord, ob alles korrekt ist.");
     }
   };
 
@@ -633,7 +788,7 @@
       await importAsaIni(f);
     } catch (e) {
       console.error(e);
-      alert("Import fehlgeschlagen. Öffne 'Import-Details (Debug)' und schick mir die Key-Namen, dann passe ich es exakt an.");
+      alert("Import fehlgeschlagen. Schau im Debug-Bereich nach, ob die Datei okay ist.");
     }
   };
 
