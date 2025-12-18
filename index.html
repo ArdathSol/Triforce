@@ -305,18 +305,32 @@
     return "unknown";
   }
 
-  function getAny(sections, keys) {
-    for (const key of keys) {
+    function getAny(sections, keys) {
+    // Sucht einen Wert über alle Sections, case-insensitive
+    for (const wanted of keys) {
+      const wantedLower = wanted.toLowerCase();
       for (const secName of Object.keys(sections)) {
         const sec = sections[secName];
-        if (sec && Object.prototype.hasOwnProperty.call(sec, key)) {
-          const val = cleanStr(sec[key]);
+        if (!sec) continue;
+
+        // 1) exakte Übereinstimmung
+        if (Object.prototype.hasOwnProperty.call(sec, wanted)) {
+          const val = cleanStr(sec[wanted]);
           if (val != null) return val;
+        }
+
+        // 2) gleiche Schreibweise, nur Groß/Kleinschreibung anders
+        for (const actualKey of Object.keys(sec)) {
+          if (actualKey.toLowerCase() === wantedLower) {
+            const val = cleanStr(sec[actualKey]);
+            if (val != null) return val;
+          }
         }
       }
     }
     return null;
   }
+
 
   function guessSpeciesFromValue(raw) {
     let v = cleanStr(raw);
@@ -370,30 +384,73 @@
 
     const lvl = toInt(getAny(ini, ["Level","DinoLevel","CharacterLevel","BaseLevel","CurrentLevel","MaxLevel"]));
 
-    const mutM = toInt(getAny(ini, [
-      "MutationsMaternal","MutationMaternal","MutationCountMaternal","MatMut","MaternalMutations","MaternalMutationCount",
-      "MotherMutations","MaternalMutation"
+        const mutM = toInt(getAny(ini, [
+      "MutationsMaternal","MutationMaternal","MutationCountMaternal","MatMut",
+      "MaternalMutations","MaternalMutationCount",
+      "MotherMutations","MaternalMutation",
+      "RandomMutationsMale"          // <- dein INI-Key
     ])) ?? 0;
 
     const mutP = toInt(getAny(ini, [
-      "MutationsPaternal","MutationPaternal","MutationCountPaternal","PatMut","PaternalMutations","PaternalMutationCount",
-      "FatherMutations","PaternalMutation"
+      "MutationsPaternal","MutationPaternal","MutationCountPaternal","PatMut",
+      "PaternalMutations","PaternalMutationCount",
+      "FatherMutations","PaternalMutation",
+      "RandomMutationsFemale"        // <- dein INI-Key
     ])) ?? 0;
 
-    const health = toFloat(getAny(ini, ["Health","StatHealth","BaseHealth","HP","HealthValue","HealthAmount"]));
+
+        const health = toFloat(getAny(ini, ["Health","StatHealth","BaseHealth","HP","HealthValue","HealthAmount"]));
     const stamina = toFloat(getAny(ini, ["Stamina","StatStamina","BaseStamina","Stam","StaminaValue","StaminaAmount"]));
     const oxygen = toFloat(getAny(ini, ["Oxygen","StatOxygen","BaseOxygen","Oxy","OxygenValue","OxygenAmount"]));
-    const food = toFloat(getAny(ini, ["Food","StatFood","BaseFood","FoodValue","FoodAmount"]));
-    const weight = toFloat(getAny(ini, ["Weight","StatWeight","BaseWeight","Wt","WeightValue","WeightAmount"]));
-    const melee = toFloat(getAny(ini, ["Melee","MeleeDamage","StatMelee","BaseMelee","MeleeValue","MeleeDamagePercent"]));
-    const speed = toFloat(getAny(ini, ["Speed","MovementSpeed","StatSpeed","BaseSpeed","SpeedValue","MovementSpeedPercent"]));
 
-    const c0 = cleanStr(getAny(ini, ["ColorRegion0","Region0Color","Color0","Color0Id","Region0","ColorSetIndex0","ColorSetIndices0","ColorSetIndices[0]","Color0Name"]));
-    const c1 = cleanStr(getAny(ini, ["ColorRegion1","Region1Color","Color1","Color1Id","Region1","ColorSetIndex1","ColorSetIndices1","ColorSetIndices[1]","Color1Name"]));
-    const c2 = cleanStr(getAny(ini, ["ColorRegion2","Region2Color","Color2","Color2Id","Region2","ColorSetIndex2","ColorSetIndices2","ColorSetIndices[2]","Color2Name"]));
-    const c3 = cleanStr(getAny(ini, ["ColorRegion3","Region3Color","Color3","Color3Id","Region3","ColorSetIndex3","ColorSetIndices3","ColorSetIndices[3]","Color3Name"]));
-    const c4 = cleanStr(getAny(ini, ["ColorRegion4","Region4Color","Color4","Color4Id","Region4","ColorSetIndex4","ColorSetIndices4","ColorSetIndices[4]","Color4Name"]));
-    const c5 = cleanStr(getAny(ini, ["ColorRegion5","Region5Color","Color5","Color5Id","Region5","ColorSetIndex5","ColorSetIndices5","ColorSetIndices[5]","Color5Name"]));
+    const food  = toFloat(getAny(ini, [
+      "Food","food","StatFood","BaseFood","FoodValue","FoodAmount"
+    ]));
+
+    const weight = toFloat(getAny(ini, ["Weight","StatWeight","BaseWeight","Wt","WeightValue","WeightAmount"]));
+
+    const melee = toFloat(getAny(ini, [
+      "Melee","MeleeDamage","Melee Damage",          // <- dein Key
+      "StatMelee","BaseMelee","MeleeValue","MeleeDamagePercent"
+    ]));
+
+    const speed = toFloat(getAny(ini, [
+      "Speed","MovementSpeed","Movement Speed",      // <- dein Key
+      "StatSpeed","BaseSpeed","SpeedValue","MovementSpeedPercent"
+    ]));
+
+
+        const c0 = cleanStr(getAny(ini, [
+      "ColorRegion0","Region0Color","Color0","Color0Id","Region0",
+      "ColorSetIndex0","ColorSetIndices0","ColorSetIndices[0]",
+      "Color0Name","ColorSet[0]"          // <- dein Key
+    ]));
+    const c1 = cleanStr(getAny(ini, [
+      "ColorRegion1","Region1Color","Color1","Color1Id","Region1",
+      "ColorSetIndex1","ColorSetIndices1","ColorSetIndices[1]",
+      "Color1Name","ColorSet[1]"
+    ]));
+    const c2 = cleanStr(getAny(ini, [
+      "ColorRegion2","Region2Color","Color2","Color2Id","Region2",
+      "ColorSetIndex2","ColorSetIndices2","ColorSetIndices[2]",
+      "Color2Name","ColorSet[2]"
+    ]));
+    const c3 = cleanStr(getAny(ini, [
+      "ColorRegion3","Region3Color","Color3","Color3Id","Region3",
+      "ColorSetIndex3","ColorSetIndices3","ColorSetIndices[3]",
+      "Color3Name","ColorSet[3]"
+    ]));
+    const c4 = cleanStr(getAny(ini, [
+      "ColorRegion4","Region4Color","Color4","Color4Id","Region4",
+      "ColorSetIndex4","ColorSetIndices4","ColorSetIndices[4]",
+      "Color4Name","ColorSet[4]"
+    ]));
+    const c5 = cleanStr(getAny(ini, [
+      "ColorRegion5","Region5Color","Color5","Color5Id","Region5",
+      "ColorSetIndex5","ColorSetIndices5","ColorSetIndices[5]",
+      "Color5Name","ColorSet[5]"
+    ]));
+
 
     el("dname").value = dinoName || "";
     el("sex").value = sex || "unknown";
